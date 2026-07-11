@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Aplikasi Kasir Warung Sederhana - Kelola pesanan, hitung pemasukan, dan export laporan ke Excel">
   <title>Kasir Warung - Aplikasi Kasir Sederhana</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff9800">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <style>
 /* ============================================
    KASIR WARUNG - Design System
@@ -2902,8 +2905,9 @@ async function createNewShop() {
 }
 
 // === AUTH: LOGIN KARYAWAN DENGAN KODE ===
-async function loginAsKaryawan() {
-  const code = document.getElementById('karyawan-code-input').value.trim();
+async function loginAsKaryawan(autoCode = null) {
+  // Jika dipanggil otomatis, lewati input DOM, jika tidak ambil dari input
+  const code = autoCode && typeof autoCode === 'string' ? autoCode : document.getElementById('karyawan-code-input').value.trim();
   if (!code) { alert('Masukkan kode karyawan terlebih dahulu!'); return; }
   
   const btn = document.getElementById('btn-karyawan-login');
@@ -2921,6 +2925,9 @@ async function loginAsKaryawan() {
       state.shopName     = data.shopName;
       state.employeeCode = data.employeeCode;
       state.uid          = null;
+      
+      // Simpan untuk auto login
+      localStorage.setItem('kasir_karyawanCode', code);
       
       enterApp();
     } else {
@@ -4691,6 +4698,36 @@ function init() {
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app-container').classList.add('hidden');
 
+  // Auto Login Check
+  const savedKaryawanCode = localStorage.getItem('kasir_karyawanCode');
+  
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      // Bos auto login
+      try {
+        const shopDoc = await db.collection('shops').doc(user.uid).get();
+        if (shopDoc.exists) {
+          const data = shopDoc.data();
+          state.uid          = user.uid;
+          state.userEmail    = user.email;
+          state.userPhotoURL = user.photoURL;
+          state.role         = 'Bos';
+          state.token        = user.uid;
+          state.shopName     = data.shopName;
+          state.employeeCode = data.employeeCode;
+          enterApp();
+        } else {
+          showNewShopForm(user.displayName);
+        }
+      } catch (err) {
+        console.error("Auto login error:", err);
+      }
+    } else if (savedKaryawanCode) {
+      // Karyawan auto login
+      loginAsKaryawan(savedKaryawanCode);
+    }
+  });
+
   updateDateDisplay();
 
   // Set history date to today
@@ -4726,5 +4763,14 @@ document.addEventListener('DOMContentLoaded', init);
 
 </script>
 
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registered', reg))
+        .catch(err => console.error('Service Worker registration failed', err));
+    });
+  }
+</script>
 </body>
 </html>
