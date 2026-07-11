@@ -4287,7 +4287,7 @@ function applyRoleRestrictions() {
     if (roleText) roleText.textContent = '💼 Bos';
     if (tokenText) {
       tokenText.style.display = 'inline-block';
-      tokenText.textContent = `Token: ${state.token} 📋`;
+      tokenText.textContent = `Kode Karyawan: ${state.employeeCode || '-'} 📋`;
     }
   } else {
     if (navKeuangan) navKeuangan.style.display = 'none';
@@ -4317,13 +4317,6 @@ function editShopName() {
       alert('Nama warung tidak boleh kosong!');
     }
   }
-}
-
-function copyEmployeeToken() {
-  if (state.role !== 'Bos') return;
-  navigator.clipboard.writeText(state.token)
-    .then(() => alert('Token Karyawan berhasil disalin ke clipboard!'))
-    .catch(() => alert('Gagal menyalin token.'));
 }
 
 // --- Bluetooth Printer & Receipt Formatting ---
