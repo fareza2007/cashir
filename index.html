@@ -114,6 +114,173 @@ body::before {
   display: none;
 }
 
+/* ===== NEW AUTH SCREEN ===== */
+.auth-container {
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  padding: 40px 24px;
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-logo {
+  width: 80px;
+  height: 80px;
+  background: var(--accent-gradient);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  margin: 0 auto 20px;
+  box-shadow: 0 0 40px var(--accent-glow), 0 8px 24px rgba(0,0,0,0.4);
+  animation: floatBounce 3s ease-in-out infinite;
+}
+
+.auth-title {
+  font-size: 1.9rem;
+  font-weight: 900;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+}
+
+.auth-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: left;
+  margin-bottom: 0;
+  transition: border-color var(--transition-base);
+}
+
+.auth-card:hover {
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.auth-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.auth-card-icon {
+  font-size: 1.8rem;
+  width: 46px;
+  height: 46px;
+  background: var(--bg-card-hover);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.auth-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 20px;
+  background: #ffffff;
+  color: #3c4043;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.btn-google:hover {
+  background: #f8f8f8;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+
+.btn-google:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.auth-code-input {
+  flex: 1;
+  padding: 12px 16px !important;
+  background: var(--bg-input) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+  font-family: 'Inter', monospace !important;
+  outline: none;
+  transition: border-color var(--transition-base);
+}
+
+.auth-code-input:focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.auth-footer {
+  margin-top: 24px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .welcome-container {
   text-align: center;
   max-width: 480px;
@@ -2079,6 +2246,9 @@ body::before {
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <!-- Chart.js for graphics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Excel export -->
@@ -2092,59 +2262,75 @@ body::before {
 </head>
 <body>
 
-<!-- ===== WELCOME / SETUP SCREEN ===== -->
+<!-- ===== WELCOME / LOGIN SCREEN ===== -->
 <div class="welcome-overlay" id="welcome-overlay">
-  <div class="welcome-container">
-    <div class="welcome-logo">🏪</div>
-    <h2 class="welcome-title">Kasir Warung</h2>
-    <p class="welcome-subtitle">Aplikasi Kasir Sederhana. Silakan atur nama warung dan peran Anda untuk memulai.</p>
-    
-    <div class="welcome-form">
-      <!-- Step 1: Shop Name -->
-      <div class="form-group" id="setup-shop-name-group">
-        <label class="form-label">Nama Warung / Toko</label>
-        <input type="text" class="form-input" id="setup-shop-name" placeholder="cth: Warung Jaya Makmur" value="Kasir Warung">
-      </div>
-      
-      <!-- Step 2: Role Selection -->
-      <div class="form-group" style="margin-top: 18px;">
-        <label class="form-label">Pilih Peran Anda</label>
-        <div class="role-selection-grid">
-          <div class="role-card active" id="role-bos" onclick="selectSetupRole('Bos')">
-            <span class="role-icon">💼</span>
-            <span class="role-title">Bos (Pemilik)</span>
-            <span class="role-desc">Akses penuh keuangan & riwayat</span>
-          </div>
-          <div class="role-card" id="role-karyawan" onclick="selectSetupRole('Karyawan')">
-            <span class="role-icon">🧑‍🍳</span>
-            <span class="role-title">Karyawan</span>
-            <span class="role-desc">Hanya akses transaksi kasir</span>
-          </div>
+
+  <!-- === SCREEN 1: PILIH LOGIN === -->
+  <div class="auth-container" id="login-screen">
+    <div class="auth-logo">🏪</div>
+    <h1 class="auth-title">Kasir Warung</h1>
+    <p class="auth-subtitle">Pilih cara masuk Anda</p>
+
+    <!-- Kartu Bos -->
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <span class="auth-card-icon">💼</span>
+        <div>
+          <div class="auth-card-title">Saya Bos / Pemilik</div>
+          <div class="auth-card-desc">Login dengan akun Google Anda</div>
         </div>
       </div>
-      
-      <!-- Step 3: Token Input (conditional) -->
-      <!-- For Bos: Set Token -->
-      <div class="form-group" id="setup-token-bos-group" style="margin-top: 18px;">
-        <label class="form-label">Token Karyawan (Pin/Sandi Karyawan)</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" class="form-input" id="setup-token-bos" placeholder="Sandi untuk karyawan" style="text-align: left;" value="KASIR123">
-          <button class="btn btn-secondary" onclick="generateRandomToken()" style="flex: 0; padding: 0 16px; min-width: 48px;" type="button">🎲</button>
-        </div>
-        <p class="form-hint" style="text-align: left; margin-top: 4px;">Berikan token ini kepada karyawan agar mereka bisa masuk.</p>
-      </div>
-      
-      <!-- For Karyawan: Enter Token -->
-      <div class="form-group" id="setup-token-karyawan-group" style="margin-top: 18px; display: none;">
-        <label class="form-label">Masukkan Kode Karyawan</label>
-        <input type="text" class="form-input" id="setup-token-karyawan" placeholder="Masukkan kode dari Bos Anda" style="text-align: center;">
-        <p class="form-hint" style="text-align: center; margin-top: 4px;">Masukkan kode akses yang diberikan oleh Bos Anda</p>
-      </div>
-      
-      <button class="welcome-btn" onclick="saveSetup()">Mulai Aplikasi ➔</button>
+      <button class="btn-google" id="btn-google-login" onclick="loginWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/></svg>
+        Masuk dengan Google
+      </button>
     </div>
-    <div class="welcome-decor">Kasir Warung · Mandiri & Praktis</div>
+
+    <div class="auth-divider"><span>atau</span></div>
+
+    <!-- Kartu Karyawan -->
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <span class="auth-card-icon">🧑‍🍳</span>
+        <div>
+          <div class="auth-card-title">Saya Karyawan</div>
+          <div class="auth-card-desc">Masukkan kode yang diberikan Bos</div>
+        </div>
+      </div>
+      <div class="auth-input-row">
+        <input type="text" id="karyawan-code-input" class="form-input auth-code-input"
+          placeholder="Contoh: AB3X9Z"
+          maxlength="6"
+          style="text-transform: uppercase; letter-spacing: 4px; font-size: 1.2rem; font-weight: 700; text-align: center;">
+        <button class="btn btn-primary" id="btn-karyawan-login" onclick="loginAsKaryawan()" style="white-space:nowrap; padding: 12px 20px;">
+          ✅ Masuk
+        </button>
+      </div>
+    </div>
+
+    <p class="auth-footer">Kasir Warung · Mandiri &amp; Praktis</p>
   </div>
+
+  <!-- === SCREEN 2: BUAT WARUNG BARU (muncul setelah Google login pertama kali) === -->
+  <div class="auth-container hidden" id="new-shop-screen">
+    <div class="auth-logo">🏪</div>
+    <h1 class="auth-title">Selamat Datang!</h1>
+    <p class="auth-subtitle">Satu langkah lagi — beri nama warung Anda</p>
+
+    <div class="auth-card">
+      <div class="form-group">
+        <label class="form-label">Nama Warung / Toko</label>
+        <input type="text" class="form-input" id="new-shop-name"
+          placeholder="cth: Warung Jaya Makmur"
+          style="font-size: 1.1rem; font-weight: 600;">
+        <p class="form-hint" style="margin-top: 6px;">Kode karyawan akan otomatis dibuat dan dikirim ke Gmail Anda.</p>
+      </div>
+      <button class="welcome-btn" id="btn-create-shop" onclick="createNewShop()" style="margin-top: 16px;">
+        🚀 Buat Warung &amp; Dapatkan Kode
+      </button>
+    </div>
+  </div>
+
 </div>
 
 <div class="app-container" id="app-container">
@@ -2184,8 +2370,9 @@ body::before {
     <div class="header-actions">
       <!-- User Profile & Badge -->
       <div class="user-role-badge" id="header-user-badge">
+        <img id="user-avatar" src="" alt="" style="display:none; width:28px; height:28px; border-radius:50%; border: 2px solid var(--accent-primary); object-fit:cover;">
         <span class="badge-role" id="role-badge-text">💼 Bos</span>
-        <span class="badge-token-info" id="token-badge-text" title="Token Karyawan. Klik untuk salin" onclick="copyEmployeeToken()">Token: KASIR123 📋</span>
+        <span class="badge-token-info" id="token-badge-text" title="Klik untuk salin kode karyawan" onclick="copyEmployeeToken()" style="cursor:pointer;">Kode: — 📋</span>
       </div>
       
       <div class="header-buttons" style="display: flex; gap: 8px;">
@@ -2500,14 +2687,21 @@ const firebaseConfig = {
   appId: "1:474869518431:web:bf88043be1f88f8c4a4bea"
 };
 let db = null;
+let auth = null;
 let unsubscribeSnapshot = null;
+
+// --- EmailJS Config (isi dengan ID dari emailjs.com) ---
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // Ganti ini
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // Ganti ini
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // Ganti ini
 
 try {
   firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
+  db   = firebase.firestore();
+  auth = firebase.auth();
 } catch (e) {
   console.error("Firebase init failed:", e);
-  alert("Sistem database gagal dimuat. Pastikan Anda terhubung ke internet dan tidak menggunakan AdBlocker yang ketat.");
+  alert("Sistem database gagal dimuat. Pastikan Anda terhubung ke internet.");
 }
 
 // --- App State ---
@@ -2526,6 +2720,11 @@ const state = {
   shopName: 'Kasir Warung',
   role: null,
   token: null,
+  isSetup: false,
+  uid: null,
+  userEmail: null,
+  userPhotoURL: null,
+  employeeCode: null,
 };
 
 // --- Helper Functions ---
@@ -2552,113 +2751,241 @@ function getCategories() {
   return ['Semua', ...cats];
 }
 
-// --- Data Storage (Local & Firebase) ---
-function loadData() {
-  const localMenu = localStorage.getItem('kasir_menu');
-  const localTxns = localStorage.getItem('kasir_transactions');
-  const localNextMenuId = localStorage.getItem('kasir_nextMenuId');
-  const localNextTxnId = localStorage.getItem('kasir_nextTxnId');
-  const localShopName = localStorage.getItem('kasir_shopName');
-  const localRole = localStorage.getItem('kasir_role');
-  const localToken = localStorage.getItem('kasir_token');
-  const localIsSetup = localStorage.getItem('kasir_isSetup');
-  
-  if (localMenu) state.menu = JSON.parse(localMenu);
-  if (localTxns) state.transactions = JSON.parse(localTxns);
-  if (localNextMenuId) state.nextMenuId = parseInt(localNextMenuId);
-  if (localNextTxnId) state.nextTxnId = parseInt(localNextTxnId);
-  
-  if (localShopName) state.shopName = localShopName;
-  if (localRole) state.role = localRole;
-  if (localToken) state.token = localToken;
-  if (localIsSetup) state.isSetup = localIsSetup === 'true';
-}
-
+// --- Data Storage ---
 function saveData() {
-  localStorage.setItem('kasir_menu', JSON.stringify(state.menu));
-  localStorage.setItem('kasir_transactions', JSON.stringify(state.transactions));
-  localStorage.setItem('kasir_nextMenuId', state.nextMenuId);
-  localStorage.setItem('kasir_nextTxnId', state.nextTxnId);
+  if (!state.token || !db) return;
   
-  localStorage.setItem('kasir_shopName', state.shopName);
-  localStorage.setItem('kasir_role', state.role);
-  localStorage.setItem('kasir_token', state.token);
-  localStorage.setItem('kasir_isSetup', state.isSetup ? 'true' : 'false');
-
-  if (state.isSetup && state.token && db) {
-    db.collection('shops').doc(state.token).set({
-      shopName: state.shopName,
-      menu: state.menu,
-      transactions: state.transactions,
-      nextMenuId: state.nextMenuId,
-      nextTxnId: state.nextTxnId,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true })
-    .catch(err => console.error("Firebase save error:", err));
-  }
+  db.collection('shops').doc(state.token).set({
+    shopName: state.shopName,
+    menu: state.menu,
+    transactions: state.transactions,
+    expenses: state.expenses || [],
+    nextMenuId: state.nextMenuId,
+    nextTxnId: state.nextTxnId,
+    employeeCode: state.employeeCode,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true })
+  .catch(err => console.error("Firebase save error:", err));
 }
 
 function syncFromFirebase() {
-  if (!state.token || !state.isSetup || !db) return;
+  if (!state.token || !db) return;
   
-  if (unsubscribeSnapshot) {
-    unsubscribeSnapshot();
-  }
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
 
   unsubscribeSnapshot = db.collection('shops').doc(state.token).onSnapshot((doc) => {
     if (doc.exists) {
       const data = doc.data();
-      state.shopName = data.shopName || state.shopName;
-      state.menu = data.menu || [];
+      state.shopName     = data.shopName     || state.shopName;
+      state.menu         = data.menu         || [];
       state.transactions = data.transactions || [];
-      state.nextMenuId = data.nextMenuId || 100;
-      state.nextTxnId = data.nextTxnId || 1;
+      state.expenses     = data.expenses     || [];
+      state.nextMenuId   = data.nextMenuId   || 100;
+      state.nextTxnId    = data.nextTxnId    || 1;
+      state.employeeCode = data.employeeCode || state.employeeCode;
       
-      // Save local backup when Firebase updates
-      localStorage.setItem('kasir_menu', JSON.stringify(state.menu));
-      localStorage.setItem('kasir_transactions', JSON.stringify(state.transactions));
-      localStorage.setItem('kasir_shopName', state.shopName);
-      localStorage.setItem('kasir_nextMenuId', state.nextMenuId);
-      localStorage.setItem('kasir_nextTxnId', state.nextTxnId);
-      
-      // Update UI if needed
       const shopTitle = document.getElementById('shop-title-display');
       if (shopTitle) shopTitle.textContent = state.shopName;
       
       if (typeof renderCategories === 'function') renderCategories();
-      if (typeof renderMenuGrid === 'function') renderMenuGrid();
-      if (typeof renderHistory === 'function') renderHistory();
-      if (state.activePage === 'keuangan' && typeof renderDashboard === 'function') renderDashboard();
+      if (typeof renderMenuGrid   === 'function') renderMenuGrid();
+      if (typeof renderHistory    === 'function') renderHistory();
+      if (state.activePage === 'keuangan'    && typeof renderDashboard  === 'function') renderDashboard();
       if (state.activePage === 'kelola-menu' && typeof renderMenuManage === 'function') renderMenuManage();
     }
-  }, (err) => {
-    console.error("Firebase sync error:", err);
-  });
+  }, (err) => console.error("Firebase sync error:", err));
 }
 
+// --- Generate Employee Code ---
+function generateEmployeeCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
 
+// --- Send Email via EmailJS ---
+function sendEmployeeCodeEmail(toEmail, shopName, employeeCode) {
+  if (!window.emailjs) { console.warn('EmailJS not loaded'); return; }
+  const templateParams = {
+    to_email:      toEmail,
+    shop_name:     shopName,
+    employee_code: employeeCode,
+  };
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY)
+    .then(() => console.log('Email kode karyawan terkirim ke', toEmail))
+    .catch(err => console.warn('EmailJS error (tidak kritis):', err));
+}
+
+// === AUTH: LOGIN BOS DENGAN GOOGLE ===
+async function loginWithGoogle() {
+  const btn = document.getElementById('btn-google-login');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menghubungkan...'; }
+  
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result   = await auth.signInWithPopup(provider);
+    const user     = result.user;
+    
+    // Cek apakah warung sudah ada di Firestore
+    const shopDoc = await db.collection('shops').doc(user.uid).get();
+    
+    if (shopDoc.exists) {
+      // === LOGIN ULANG: Langsung masuk ===
+      const data = shopDoc.data();
+      state.uid          = user.uid;
+      state.userEmail    = user.email;
+      state.userPhotoURL = user.photoURL;
+      state.role         = 'Bos';
+      state.token        = user.uid;
+      state.shopName     = data.shopName;
+      state.employeeCode = data.employeeCode;
+      enterApp();
+    } else {
+      // === PERTAMA KALI: Tampilkan form nama warung ===
+      state.uid          = user.uid;
+      state.userEmail    = user.email;
+      state.userPhotoURL = user.photoURL;
+      showNewShopForm(user.displayName);
+    }
+  } catch (err) {
+    console.error('Google Sign-In error:', err);
+    if (btn) { btn.disabled = false; btn.innerHTML = '<img src="https://www.google.com/favicon.ico" style="width:18px;height:18px;"> Masuk dengan Google'; }
+    if (err.code !== 'auth/popup-closed-by-user') {
+      alert('Gagal login: ' + err.message);
+    }
+  }
+}
+
+function showNewShopForm(displayName) {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('new-shop-screen').classList.remove('hidden');
+  const nameInput = document.getElementById('new-shop-name');
+  if (nameInput) nameInput.value = displayName ? displayName + ' Warung' : '';
+  nameInput.focus();
+}
+
+async function createNewShop() {
+  const shopName = document.getElementById('new-shop-name').value.trim();
+  if (!shopName) { alert('Nama warung tidak boleh kosong!'); return; }
+  
+  const btn = document.getElementById('btn-create-shop');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan...'; }
+  
+  const employeeCode = generateEmployeeCode();
+  
+  state.role         = 'Bos';
+  state.token        = state.uid;
+  state.shopName     = shopName;
+  state.employeeCode = employeeCode;
+  
+  // Simpan ke Firestore
+  await db.collection('shops').doc(state.uid).set({
+    shopName:      shopName,
+    employeeCode:  employeeCode,
+    ownerEmail:    state.userEmail,
+    menu:          [],
+    transactions:  [],
+    expenses:      [],
+    nextMenuId:    100,
+    nextTxnId:     1,
+    createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+  });
+  
+  // Kirim kode ke Gmail Bos
+  sendEmployeeCodeEmail(state.userEmail, shopName, employeeCode);
+  
+  enterApp();
+}
+
+// === AUTH: LOGIN KARYAWAN DENGAN KODE ===
+async function loginAsKaryawan() {
+  const code = document.getElementById('karyawan-code-input').value.trim().toUpperCase();
+  if (!code) { alert('Masukkan kode karyawan terlebih dahulu!'); return; }
+  
+  const btn = document.getElementById('btn-karyawan-login');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memeriksa...'; }
+  
+  try {
+    const snapshot = await db.collection('shops').where('employeeCode', '==', code).limit(1).get();
+    
+    if (!snapshot.empty) {
+      const shopDoc = snapshot.docs[0];
+      const data    = shopDoc.data();
+      
+      state.role         = 'Karyawan';
+      state.token        = shopDoc.id;
+      state.shopName     = data.shopName;
+      state.employeeCode = data.employeeCode;
+      state.uid          = null;
+      
+      enterApp();
+    } else {
+      alert('Kode tidak ditemukan! Minta kode yang benar dari Bos Anda.');
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Masuk'; }
+    }
+  } catch (err) {
+    console.error('Karyawan login error:', err);
+    alert('Gagal memeriksa kode. Periksa koneksi internet Anda.\nError: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Masuk'; }
+  }
+}
+
+// === MASUK KE APLIKASI ===
+function enterApp() {
+  document.getElementById('welcome-overlay').classList.add('hidden');
+  document.getElementById('app-container').classList.remove('hidden');
+  
+  // Update header
+  const shopTitle = document.getElementById('shop-title-display');
+  if (shopTitle) shopTitle.textContent = state.shopName;
+  
+  // Update user badge
+  const roleBadge  = document.getElementById('role-badge-text');
+  const tokenBadge = document.getElementById('token-badge-text');
+  const userAvatar = document.getElementById('user-avatar');
+  
+  if (roleBadge)  roleBadge.textContent  = state.role === 'Bos' ? '💼 Bos' : '🧑‍🍳 Karyawan';
+  if (tokenBadge) tokenBadge.textContent = 'Kode: ' + (state.employeeCode || '-');
+  if (userAvatar && state.userPhotoURL) {
+    userAvatar.src   = state.userPhotoURL;
+    userAvatar.style.display = 'block';
+  }
+  
+  applyRoleRestrictions();
+  syncFromFirebase();
+  renderCategories();
+  renderMenuGrid();
+  renderCart();
+}
+
+// === COPY KODE KARYAWAN ===
+function copyEmployeeToken() {
+  if (!state.employeeCode) return;
+  navigator.clipboard.writeText(state.employeeCode)
+    .then(() => alert('Kode karyawan "' + state.employeeCode + '" berhasil disalin! Bagikan ke karyawan Anda.'))
+    .catch(() => alert('Kode karyawan Anda: ' + state.employeeCode));
+}
 
 function applyRoleRestrictions() {
   if (state.role === 'Karyawan') {
     document.querySelector('.nav-tab[data-page="keuangan"]').style.display = 'none';
-    document.querySelector('.nav-tab[data-page="riwayat"]').style.display = 'none';
-    document.querySelector('.nav-tab[data-page="menu"]').style.display = 'none';
-    
+    document.querySelector('.nav-tab[data-page="riwayat"]').style.display  = 'none';
+    document.querySelector('.nav-tab[data-page="menu"]').style.display     = 'none';
     if (state.activePage !== 'kasir') switchPage('kasir');
   } else {
     document.querySelector('.nav-tab[data-page="keuangan"]').style.display = 'flex';
-    document.querySelector('.nav-tab[data-page="riwayat"]').style.display = 'flex';
-    document.querySelector('.nav-tab[data-page="menu"]').style.display = 'flex';
+    document.querySelector('.nav-tab[data-page="riwayat"]').style.display  = 'flex';
+    document.querySelector('.nav-tab[data-page="menu"]').style.display     = 'flex';
   }
 }
 
 function logout() {
-  if (confirm('Yakin ingin keluar?')) {
-    localStorage.removeItem('kasir_isSetup');
-    localStorage.removeItem('kasir_token');
-    localStorage.removeItem('kasir_role');
-    window.location.reload();
-  }
+  if (!confirm('Yakin ingin keluar?')) return;
+  if (auth && auth.currentUser) auth.signOut();
+  localStorage.clear();
+  window.location.reload();
 }
 
 // --- Navigation ---
@@ -4361,28 +4688,12 @@ function saveExpense() {
 
 // --- Initialize ---
 function init() {
-  loadData();
-  
-  if (!state.isSetup) {
-    document.getElementById('welcome-overlay').classList.remove('hidden');
-    document.getElementById('app-container').classList.add('hidden');
-    const nameInput = document.getElementById('setup-shop-name');
-    if(nameInput) nameInput.value = state.shopName || '';
-    const tokenInput = document.getElementById('setup-token-bos');
-    if(tokenInput) tokenInput.value = state.token || '';
-  } else {
-    document.getElementById('welcome-overlay').classList.add('hidden');
-    document.getElementById('app-container').classList.remove('hidden');
-    const shopTitle = document.getElementById('shop-title-display');
-    if (shopTitle) shopTitle.textContent = state.shopName;
-    applyRoleRestrictions();
-    syncFromFirebase();
-  }
+  // Tampilkan loading sementara menunggu auth
+  document.getElementById('welcome-overlay').classList.remove('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app-container').classList.add('hidden');
 
   updateDateDisplay();
-  renderCategories();
-  renderMenuGrid();
-  renderCart();
 
   // Set history date to today
   const dateInput = document.getElementById('history-date');
@@ -4405,6 +4716,11 @@ function init() {
   // Keyboard shortcut: Escape to close modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
+  });
+  
+  // Allow Enter key in karyawan code input
+  document.getElementById('karyawan-code-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginAsKaryawan();
   });
 }
 
