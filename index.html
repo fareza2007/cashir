@@ -2831,8 +2831,10 @@ async function loginWithGoogle() {
       state.token        = user.uid;
       state.shopName     = data.shopName;
       
-      // Jika belum punya kode (data lama), buat kode baru
-      if (!data.employeeCode) {
+      // Validasi: kode harus tepat 8 digit angka
+      const isValidCode = data.employeeCode && /^\d{8}$/.test(data.employeeCode);
+      if (!isValidCode) {
+        // Kode lama tidak valid → buat kode baru 8 digit
         const newCode = generateEmployeeCode();
         state.employeeCode = newCode;
         db.collection('shops').doc(user.uid).update({ employeeCode: newCode });
