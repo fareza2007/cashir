@@ -2253,12 +2253,6 @@ body::before {
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Excel export -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script>
-    window.onerror = function(msg, url, line, col, error) {
-      alert("Error: " + msg + "\nLine: " + line);
-      return false;
-    };
-  </script>
 </head>
 <body>
 
@@ -2298,10 +2292,11 @@ body::before {
         </div>
       </div>
       <div class="auth-input-row">
-        <input type="text" id="karyawan-code-input" class="form-input auth-code-input"
-          placeholder="Contoh: AB3X9Z"
-          maxlength="6"
-          style="text-transform: uppercase; letter-spacing: 4px; font-size: 1.2rem; font-weight: 700; text-align: center;">
+        <input type="number" id="karyawan-code-input" class="form-input auth-code-input"
+          placeholder="Kode 8 angka"
+          maxlength="8"
+          oninput="if(this.value.length>8)this.value=this.value.slice(0,8)"
+          style="letter-spacing: 3px; font-size: 1.2rem; font-weight: 700; text-align: center;">
         <button class="btn btn-primary" id="btn-karyawan-login" onclick="loginAsKaryawan()" style="white-space:nowrap; padding: 12px 20px;">
           ✅ Masuk
         </button>
@@ -2376,14 +2371,14 @@ body::before {
       </div>
       
       <div class="header-buttons" style="display: flex; gap: 8px;">
-        <button class="btn btn-secondary btn-icon" id="btn-connect-printer" onclick="connectBluetoothPrinter()" title="Sambungkan Printer Bluetooth" style="padding: 8px 12px; min-width: 40px; display: flex; align-items: center; gap: 6px;">
-          🖨️ <span class="hide-mobile">Printer</span>
+        <button class="btn btn-secondary btn-icon" id="btn-connect-printer" onclick="connectBluetoothPrinter()" title="Sambungkan Printer Bluetooth" style="padding: 8px 14px; font-size: 1.1rem;">
+          🖨️
         </button>
-        <button class="btn btn-success btn-icon" onclick="exportToExcel()" title="Export ke Excel" style="padding: 8px 12px; min-width: 40px; display: flex; align-items: center; gap: 6px;">
-          📥 <span class="hide-mobile">Excel</span>
+        <button class="btn btn-success btn-icon" onclick="exportToExcel()" title="Export ke Excel" style="padding: 8px 14px; font-size: 1.1rem;">
+          📥
         </button>
-        <button class="btn btn-secondary btn-icon" onclick="logout()" title="Keluar" id="btn-logout" style="padding: 8px 12px; min-width: 40px; display: flex; align-items: center; gap: 6px;">
-          🚪 <span class="hide-mobile">Keluar</span>
+        <button class="btn btn-secondary btn-icon" onclick="logout()" title="Keluar" id="btn-logout" style="padding: 8px 14px; font-size: 1.1rem;">
+          🚪
         </button>
       </div>
     </div>
@@ -2796,26 +2791,22 @@ function syncFromFirebase() {
   }, (err) => console.error("Firebase sync error:", err));
 }
 
-// --- Generate Employee Code ---
+// --- Generate Employee Code: 8 digit angka ---
 function generateEmployeeCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-  return code;
+  // Hasilkan angka 8 digit (10000000 - 99999999)
+  return String(Math.floor(10000000 + Math.random() * 90000000));
 }
 
 // --- Send Email via EmailJS ---
 function sendEmployeeCodeEmail(toEmail, shopName, employeeCode) {
-  if (!window.emailjs) { console.warn('EmailJS not loaded'); return; }
-  const templateParams = {
-    to_email:      toEmail,
-    shop_name:     shopName,
-    employee_code: employeeCode,
-  };
-  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY)
-    .then(() => console.log('Email kode karyawan terkirim ke', toEmail))
-    .catch(err => console.warn('EmailJS error (tidak kritis):', err));
+  if (!window.emailjs) return;
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+  const templateParams = { to_email: toEmail, shop_name: shopName, employee_code: employeeCode };
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+    .then(() => console.log('Email terkirim ke', toEmail))
+    .catch(err => console.warn('EmailJS error:', err));
 }
+
 
 // === AUTH: LOGIN BOS DENGAN GOOGLE ===
 async function loginWithGoogle() {
@@ -2839,7 +2830,15 @@ async function loginWithGoogle() {
       state.role         = 'Bos';
       state.token        = user.uid;
       state.shopName     = data.shopName;
-      state.employeeCode = data.employeeCode;
+      
+      // Jika belum punya kode (data lama), buat kode baru
+      if (!data.employeeCode) {
+        const newCode = generateEmployeeCode();
+        state.employeeCode = newCode;
+        db.collection('shops').doc(user.uid).update({ employeeCode: newCode });
+      } else {
+        state.employeeCode = data.employeeCode;
+      }
       enterApp();
     } else {
       // === PERTAMA KALI: Tampilkan form nama warung ===
@@ -2901,7 +2900,7 @@ async function createNewShop() {
 
 // === AUTH: LOGIN KARYAWAN DENGAN KODE ===
 async function loginAsKaryawan() {
-  const code = document.getElementById('karyawan-code-input').value.trim().toUpperCase();
+  const code = document.getElementById('karyawan-code-input').value.trim();
   if (!code) { alert('Masukkan kode karyawan terlebih dahulu!'); return; }
   
   const btn = document.getElementById('btn-karyawan-login');
@@ -3691,7 +3690,10 @@ function renderIncomeChart(transactions, period) {
 }
 
 function renderTopItemsChart(transactions) {
-  const ctx = document.getElementById('top-items-chart').getContext('2d');
+  const canvasEl = document.getElementById('top-items-chart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
+  if (!ctx) return;
   if (topItemsChartInstance) topItemsChartInstance.destroy();
 
   // Count items
