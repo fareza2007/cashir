@@ -3527,31 +3527,27 @@ function renderDashboard() {
 
   // Calculate values
   const totalIncome = filteredTxns.reduce((sum, t) => sum + t.total, 0);
-  const totalExpense = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const netProfit = totalIncome - totalExpense;
+  const avgTxn = filteredTxns.length ? Math.round(totalIncome / filteredTxns.length) : 0;
+  
+  let itemsSold = 0;
+  filteredTxns.forEach(t => t.items.forEach(i => itemsSold += i.qty));
 
-  // Render Income Cards
-  const statsContainer = document.getElementById('dashboard-stats');
-  if (statsContainer) {
-    statsContainer.innerHTML = `
-      <div class="stat-card">
-        <div class="stat-label">Pemasukan</div>
-        <div class="stat-value text-success">${formatRupiah(totalIncome)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Pengeluaran</div>
-        <div class="stat-value text-danger">${formatRupiah(totalExpense)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Laba Bersih</div>
-        <div class="stat-value ${netProfit >= 0 ? 'text-success' : 'text-danger'}">${formatRupiah(netProfit)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Transaksi</div>
-        <div class="stat-value">${filteredTxns.length}</div>
-      </div>
-    `;
-  }
+  // Render Income Cards directly to IDs
+  const elIncome = document.getElementById('stat-income');
+  const elTxn = document.getElementById('stat-txn');
+  const elAvg = document.getElementById('stat-avg');
+  const elItems = document.getElementById('stat-items');
+  
+  if (elIncome) elIncome.textContent = formatRupiah(totalIncome);
+  if (elTxn) elTxn.textContent = filteredTxns.length;
+  if (elAvg) elAvg.textContent = formatRupiah(avgTxn);
+  if (elItems) elItems.textContent = itemsSold;
+  
+  const subText = period === 'hari' ? 'Hari Ini' : (period === 'minggu' ? 'Minggu Ini' : (period === 'bulan' ? 'Bulan Ini' : 'Semua Waktu'));
+  const elIncomeSub = document.getElementById('stat-income-sub');
+  const elTxnSub = document.getElementById('stat-txn-sub');
+  if (elIncomeSub) elIncomeSub.textContent = subText;
+  if (elTxnSub) elTxnSub.textContent = subText;
 
   // Render charts and list
   renderIncomeChart(filteredTxns, period);
@@ -3820,6 +3816,13 @@ function renderTopItemsTable(transactions) {
 
 function setPeriod(period) {
   state.dashboardPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    if (btn.dataset.period === period) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
   renderDashboard();
 }
 
