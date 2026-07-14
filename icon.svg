@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#112233"/>
+  <!-- cashir text -->
+  <text x="36" y="310" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="148" fill="#ffffff" letter-spacing="-6">cashir</text>
+  <!-- qu text -->
+  <text x="386" y="310" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="148" fill="#3dbf8a" letter-spacing="-6">qu</text>
+  <!-- WiFi/receipt icon above q -->
+  <g transform="translate(388, 100)">
+    <path d="M10,70 Q10,20 60,20 Q110,20 110,70" fill="none" stroke="#3dbf8a" stroke-width="18" stroke-linecap="round"/>
+    <path d="M28,70 Q28,42 60,42 Q92,42 92,70" fill="none" stroke="#3dbf8a" stroke-width="18" stroke-linecap="round"/>
+    <rect x="48" y="68" width="24" height="28" rx="4" fill="#3dbf8a"/>
+    <rect x="32" y="96" width="56" height="16" rx="8" fill="#3dbf8a"/>
+  </g>
+</svg>

@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Aplikasi Kasir Warung Sederhana - Kelola pesanan, hitung pemasukan, dan export laporan ke Excel">
-  <title>Kasir Warung - Aplikasi Kasir Sederhana</title>
+  <meta name="description" content="cashirqu - Aplikasi Kasir Modern untuk Warung & Toko Anda">
+  <title>cashirqu - Aplikasi Kasir Modern</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ff9800">
+  <meta name="theme-color" content="#3dbf8a">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <style>
 /* ============================================
-   KASIR WARUNG - Design System
-   Modern Dark Theme with Warm Accents
+   CASHIRQU - Design System
+   Modern Dark Theme with Mint Green Accents
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -25,10 +25,10 @@
   --bg-glass: rgba(34, 34, 46, 0.7);
   --bg-input: #2a2a38;
 
-  --accent-primary: #f59e0b;
-  --accent-secondary: #fb923c;
-  --accent-gradient: linear-gradient(135deg, #f59e0b, #fb923c);
-  --accent-glow: rgba(245, 158, 11, 0.3);
+  --accent-primary: #3dbf8a;
+  --accent-secondary: #27ae80;
+  --accent-gradient: linear-gradient(135deg, #3dbf8a, #27ae80);
+  --accent-glow: rgba(61, 191, 138, 0.3);
 
   --success: #22c55e;
   --success-bg: rgba(34, 197, 94, 0.15);
@@ -44,7 +44,7 @@
   --text-muted: #6b6b80;
 
   --border: rgba(255, 255, 255, 0.06);
-  --border-active: rgba(245, 158, 11, 0.4);
+  --border-active: rgba(61, 191, 138, 0.4);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -2265,8 +2265,21 @@ body::before {
 
   <!-- === SCREEN 1: PILIH LOGIN === -->
   <div class="auth-container" id="login-screen">
-    <div class="auth-logo">🏪</div>
-    <h1 class="auth-title">Kasir Warung</h1>
+    <div class="auth-logo" style="background:none; box-shadow:none; padding:0; width:auto; height:auto; display:flex; justify-content:center; margin-bottom:16px;">
+      <svg viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg" style="width:220px; height:55px;">
+        <!-- Icon above q -->
+        <g transform="translate(222, 4)">
+          <path d="M8,18 Q8,6 20,6 Q32,6 32,18" fill="none" stroke="#3dbf8a" stroke-width="4" stroke-linecap="round"/>
+          <path d="M14,18 Q14,12 20,12 Q26,12 26,18" fill="none" stroke="#3dbf8a" stroke-width="4" stroke-linecap="round"/>
+          <rect x="18" y="17" width="4" height="5" rx="1" fill="#3dbf8a"/>
+          <rect x="14" y="22" width="12" height="3" rx="1.5" fill="#3dbf8a"/>
+        </g>
+        <!-- cashir text -->
+        <text x="0" y="62" font-family="Inter, sans-serif" font-weight="700" font-size="52" fill="#ffffff" letter-spacing="-2">cashir</text>
+        <!-- qu text -->
+        <text x="222" y="62" font-family="Inter, sans-serif" font-weight="700" font-size="52" fill="#3dbf8a" letter-spacing="-2">qu</text>
+      </svg>
+    </div>
     <p class="auth-subtitle">Pilih cara masuk Anda</p>
 
     <!-- Kartu Bos -->
@@ -2307,7 +2320,7 @@ body::before {
       </div>
     </div>
 
-    <p class="auth-footer">Kasir Warung · Mandiri &amp; Praktis</p>
+    <p class="auth-footer">cashirqu · Mandiri &amp; Praktis</p>
   </div>
 
   <!-- === SCREEN 2: BUAT WARUNG BARU (muncul setelah Google login pertama kali) === -->
@@ -2670,7 +2683,7 @@ body::before {
 
 <script>
 // ============================================
-// KASIR WARUNG - Application Logic
+// CASHIRQU - Application Logic
 // ============================================
 
 // --- Default Menu Data ---
@@ -2716,7 +2729,7 @@ const state = {
   nextTxnId: 1,
   
   // Setup & Role State
-  shopName: 'Kasir Warung',
+  shopName: 'cashirqu',
   role: null,
   token: null,
   isSetup: false,
