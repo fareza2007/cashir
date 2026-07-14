@@ -2363,8 +2363,10 @@ body::before {
   <!-- ===== HEADER ===== -->
   <header class="app-header">
     <div class="app-logo">
-      <div class="logo-icon" id="shop-logo-display" onclick="if(state.role==='Bos')triggerLogoUpload()" style="cursor:pointer; overflow:hidden; position:relative;">
-        <span id="shop-logo-emoji">🏪</span>
+      <div class="logo-icon" id="shop-logo-display" onclick="if(state.role==='Bos')triggerLogoUpload()" style="cursor:pointer; overflow:hidden; position:relative; background:transparent;">
+        <!-- Default: cashirqu logo PNG -->
+        <img id="shop-logo-default" src="cashirqu-logo.png" alt="cashirqu" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;">
+        <!-- Custom shop logo (ditimpa ketika Bos upload logo sendiri) -->
         <img id="shop-logo-img" src="" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:none;position:absolute;top:0;left:0;">
       </div>
       <!-- Hidden file input untuk ganti logo dari header -->
@@ -2962,15 +2964,17 @@ async function changeShopLogo(event) {
 
 // Terapkan logo ke header
 function applyShopLogo() {
-  const emoji = document.getElementById('shop-logo-emoji');
-  const img   = document.getElementById('shop-logo-img');
-  if (!emoji || !img) return;
+  const defaultLogo = document.getElementById('shop-logo-default');
+  const img         = document.getElementById('shop-logo-img');
+  if (!img) return;
   if (state.shopLogo) {
-    emoji.style.display = 'none';
+    // Tampilkan logo custom, sembunyikan default
+    if (defaultLogo) defaultLogo.style.display = 'none';
     img.src = state.shopLogo;
     img.style.display = 'block';
   } else {
-    emoji.style.display = 'block';
+    // Tampilkan logo default cashirqu
+    if (defaultLogo) defaultLogo.style.display = 'block';
     img.style.display = 'none';
   }
 }
