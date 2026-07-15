@@ -2993,6 +2993,13 @@ function hidePricingScreen() {
 
 // Cek subscription dari Firestore berdasarkan UID
 async function checkAndShowSubscription() {
+  // === ADMIN BYPASS ===
+  const adminEmails = ['hakaikfareza@gmail.com'];
+  if (adminEmails.includes(state.userEmail)) {
+    enterApp();
+    return;
+  }
+  // ====================
   try {
     const subDoc = await db.collection('subscriptions').doc(state.uid).get();
     if (subDoc.exists) {
