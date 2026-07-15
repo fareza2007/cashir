@@ -5128,7 +5128,8 @@ function init() {
           state.shopName     = data.shopName;
           state.employeeCode = data.employeeCode;
           state.shopLogo     = data.shopLogo || null;
-          enterApp();
+          // Cek subscription sebelum masuk app
+          await checkAndShowSubscription();
         } else {
           showNewShopForm(user.displayName);
         }
