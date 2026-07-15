@@ -2610,7 +2610,19 @@ body::before {
         <div class="sc-value" id="stat-income">Rp 0</div>
         <div class="sc-sub" id="stat-income-sub">Hari Ini</div>
       </div>
+      <div class="stat-card" style="border-left: 4px solid var(--danger, #ef4444);">
+        <div class="sc-icon">💸</div>
+        <div class="sc-label">Total Pengeluaran</div>
+        <div class="sc-value" id="stat-expense" style="color: var(--danger, #ef4444);">Rp 0</div>
+        <div class="sc-sub" id="stat-expense-sub">Hari Ini</div>
+      </div>
       <div class="stat-card success">
+        <div class="sc-icon">✨</div>
+        <div class="sc-label">Laba Bersih</div>
+        <div class="sc-value" id="stat-net-profit">Rp 0</div>
+        <div class="sc-sub" id="stat-net-profit-sub">Hari Ini</div>
+      </div>
+      <div class="stat-card success" style="border-left-color: #3dbf8a;">
         <div class="sc-icon">🧾</div>
         <div class="sc-label">Jumlah Transaksi</div>
         <div class="sc-value" id="stat-txn">0</div>
@@ -3789,36 +3801,78 @@ function renderHistory() {
   const dateInput = document.getElementById('history-date');
   const selectedDate = dateInput.value || getTodayStr();
 
-  const filtered = state.transactions.filter(t =>
+  const filteredTxn = state.transactions.filter(t =>
     t.date.split('T')[0] === selectedDate
   ).reverse();
 
-  const dayTotal = filtered.reduce((s, t) => s + t.total, 0);
+  const filteredExp = (state.expenses || []).filter(e =>
+    e.date === selectedDate
+  );
+
+  const dayTotal  = filteredTxn.reduce((s, t) => s + t.total, 0);
+  const dayExpTotal = filteredExp.reduce((s, e) => s + e.amount, 0);
 
   // Summary
   document.getElementById('history-summary').innerHTML = `
-    <span class="ds-label">📅 ${formatDate(selectedDate)} &nbsp;·&nbsp; <span class="ds-count">${filtered.length} transaksi</span></span>
+    <span class="ds-label">📅 ${formatDate(selectedDate)} &nbsp;·&nbsp; <span class="ds-count">${filteredTxn.length} transaksi</span></span>
     <span class="ds-value">${formatRupiah(dayTotal)}</span>
   `;
 
-  if (filtered.length === 0) {
-    container.innerHTML = `<div class="history-empty">📭 Belum ada transaksi pada tanggal ini</div>`;
+  // Gabungkan transaksi + pengeluaran, sort by time
+  const combinedItems = [
+    ...filteredTxn.map(t => ({ type: 'txn', time: new Date(t.date), data: t })),
+    ...filteredExp.map(e => ({ type: 'exp', time: new Date(e.timestamp), data: e })),
+  ].sort((a, b) => b.time - a.time);
+
+  if (combinedItems.length === 0) {
+    container.innerHTML = `<div class="history-empty">📭 Belum ada transaksi atau pengeluaran pada tanggal ini</div>`;
     return;
   }
 
-  container.innerHTML = filtered.map(t => `
-    <div class="history-item" onclick="showTxnDetail(${t.id})">
-      <div class="hi-top">
-        <span class="hi-id">#${t.id} <span style="color:var(--text-muted);font-weight:400;font-size:0.75rem;">· ${t.orderType || '-'}</span></span>
-        <span class="hi-time">${formatTime(t.date)}</span>
+  container.innerHTML = combinedItems.map(item => {
+    if (item.type === 'txn') {
+      const t = item.data;
+      return `
+        <div class="history-item" onclick="showTxnDetail(${t.id})">
+          <div class="hi-top">
+            <span class="hi-id">#${t.id} <span style="color:var(--text-muted);font-weight:400;font-size:0.75rem;">· ${t.orderType || '-'}</span></span>
+            <span class="hi-time">${formatTime(t.date)}</span>
+          </div>
+          <div class="hi-items">${t.items.map(i => `${i.emoji || '🍽️'} ${i.name} x${i.qty}`).join(', ')}</div>
+          <div class="flex justify-between items-center mt-12">
+            <span style="font-size:0.72rem;padding:2px 6px;background:var(--bg-card);border-radius:4px;color:${t.paymentMethod === 'ShopeePay' ? '#ee4d2d' : 'var(--success)'}">${t.paymentMethod === 'ShopeePay' ? '📱 ShopeePay' : '💵 Tunai'}</span>
+            <span class="hi-total">${formatRupiah(t.total)}</span>
+          </div>
+        </div>`;
+    } else {
+      const e = item.data;
+      return `
+        <div class="history-item" style="border-left: 3px solid var(--danger, #ef4444);">
+          <div class="hi-top">
+            <span class="hi-id" style="color:var(--danger,#ef4444);">💸 Pengeluaran</span>
+            <span class="hi-time">${formatTime(e.timestamp)}</span>
+          </div>
+          <div class="hi-items">${e.desc}</div>
+          <div class="flex justify-between items-center mt-12">
+            <span style="font-size:0.72rem;padding:2px 6px;background:rgba(239,68,68,0.1);border-radius:4px;color:var(--danger,#ef4444);">Pengeluaran</span>
+            <span class="hi-total" style="color:var(--danger,#ef4444);">- ${formatRupiah(e.amount)}</span>
+          </div>
+        </div>`;
+    }
+  }).join('');
+
+  // Tambahkan ringkasan pengeluaran hari ini di bawah jika ada
+  if (filteredExp.length > 0) {
+    container.innerHTML += `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(239,68,68,0.08);border-radius:var(--radius-md);border:1px solid rgba(239,68,68,0.2);margin-top:4px;">
+        <span style="font-size:0.82rem;color:var(--text-muted);">Total Pengeluaran Hari Ini</span>
+        <span style="font-weight:700;color:var(--danger,#ef4444);">- ${formatRupiah(dayExpTotal)}</span>
       </div>
-      <div class="hi-items">${t.items.map(i => `${i.emoji || '🍽️'} ${i.name} x${i.qty}`).join(', ')}</div>
-      <div class="flex justify-between items-center mt-12">
-        <span style="font-size:0.72rem;padding:2px 6px;background:var(--bg-card);border-radius:4px;color:${t.paymentMethod === 'ShopeePay' ? '#ee4d2d' : 'var(--success)'}">${t.paymentMethod === 'ShopeePay' ? '📱 ShopeePay' : '💵 Tunai'}</span>
-        <span class="hi-total">${formatRupiah(t.total)}</span>
-      </div>
-    </div>
-  `).join('');
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(61,191,138,0.08);border-radius:var(--radius-md);border:1px solid rgba(61,191,138,0.2);">
+        <span style="font-size:0.82rem;color:var(--text-muted);">Laba Bersih Hari Ini</span>
+        <span style="font-weight:700;color:var(--accent-primary);">= ${formatRupiah(dayTotal - dayExpTotal)}</span>
+      </div>`;
+  }
 }
 
 function showTxnDetail(txnId) {
@@ -3943,6 +3997,8 @@ function renderDashboard() {
 
   // Calculate values
   const totalIncome = filteredTxns.reduce((sum, t) => sum + t.total, 0);
+  const totalExpense = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const netProfit = totalIncome - totalExpense;
   const avgTxn = filteredTxns.length ? Math.round(totalIncome / filteredTxns.length) : 0;
   
   let itemsSold = 0;
@@ -3950,19 +4006,30 @@ function renderDashboard() {
 
   // Render Income Cards directly to IDs
   const elIncome = document.getElementById('stat-income');
+  const elExpense = document.getElementById('stat-expense');
+  const elNetProfit = document.getElementById('stat-net-profit');
   const elTxn = document.getElementById('stat-txn');
   const elAvg = document.getElementById('stat-avg');
   const elItems = document.getElementById('stat-items');
   
   if (elIncome) elIncome.textContent = formatRupiah(totalIncome);
+  if (elExpense) elExpense.textContent = '- ' + formatRupiah(totalExpense);
+  if (elNetProfit) {
+    elNetProfit.textContent = formatRupiah(netProfit);
+    elNetProfit.style.color = netProfit < 0 ? 'var(--danger, #ef4444)' : '';
+  }
   if (elTxn) elTxn.textContent = filteredTxns.length;
   if (elAvg) elAvg.textContent = formatRupiah(avgTxn);
   if (elItems) elItems.textContent = itemsSold;
   
   const subText = period === 'hari' ? 'Hari Ini' : (period === 'minggu' ? 'Minggu Ini' : (period === 'bulan' ? 'Bulan Ini' : 'Semua Waktu'));
   const elIncomeSub = document.getElementById('stat-income-sub');
+  const elExpenseSub = document.getElementById('stat-expense-sub');
+  const elNetProfitSub = document.getElementById('stat-net-profit-sub');
   const elTxnSub = document.getElementById('stat-txn-sub');
   if (elIncomeSub) elIncomeSub.textContent = subText;
+  if (elExpenseSub) elExpenseSub.textContent = subText;
+  if (elNetProfitSub) elNetProfitSub.textContent = subText;
   if (elTxnSub) elTxnSub.textContent = subText;
 
   // Render charts and list
@@ -4527,24 +4594,35 @@ function exportToExcel() {
   const dateMap = {};
   state.transactions.forEach(t => {
     const d = t.date.split('T')[0];
-    if (!dateMap[d]) dateMap[d] = { income: 0, count: 0 };
+    if (!dateMap[d]) dateMap[d] = { income: 0, count: 0, expense: 0 };
     dateMap[d].income += t.total;
-    dateMap[d].count += 1;
+    dateMap[d].count  += 1;
+  });
+  // Tambahkan pengeluaran ke dateMap
+  (state.expenses || []).forEach(e => {
+    const d = e.date;
+    if (!dateMap[d]) dateMap[d] = { income: 0, count: 0, expense: 0 };
+    dateMap[d].expense += e.amount;
   });
 
   Object.entries(dateMap).sort().forEach(([date, d]) => {
     summary.push({
-      'Tanggal': formatDate(date),
-      'Jumlah Transaksi': d.count,
-      'Total Pemasukan': d.income,
+      'Tanggal':           formatDate(date),
+      'Jumlah Transaksi':  d.count,
+      'Total Pemasukan':   d.income,
+      'Total Pengeluaran': d.expense,
+      'Laba Bersih':       d.income - d.expense,
     });
   });
 
-  const totalAll = state.transactions.reduce((s, t) => s + t.total, 0);
+  const totalAll    = state.transactions.reduce((s, t) => s + t.total, 0);
+  const totalExpAll = (state.expenses || []).reduce((s, e) => s + e.amount, 0);
   summary.push({
-    'Tanggal': 'TOTAL',
-    'Jumlah Transaksi': state.transactions.length,
-    'Total Pemasukan': totalAll,
+    'Tanggal':           'TOTAL',
+    'Jumlah Transaksi':  state.transactions.length,
+    'Total Pemasukan':   totalAll,
+    'Total Pengeluaran': totalExpAll,
+    'Laba Bersih':       totalAll - totalExpAll,
   });
 
   // Create workbook
@@ -4562,6 +4640,19 @@ function exportToExcel() {
     { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 14 },
   ];
   ws2['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 16 }];
+
+  // Sheet 3 — Pengeluaran
+  const expRows = (state.expenses || []).map(e => ({
+    'Tanggal':      formatDate(e.date),
+    'Jam':          formatTime(e.timestamp),
+    'Keterangan':   e.desc,
+    'Jumlah':       e.amount,
+  }));
+  if (expRows.length > 0) {
+    const ws3 = XLSX.utils.json_to_sheet(expRows);
+    ws3['!cols'] = [{ wch: 14 }, { wch: 8 }, { wch: 30 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Pengeluaran');
+  }
 
   const fileName = `Laporan_Warung_${getTodayStr()}.xlsx`;
   XLSX.writeFile(wb, fileName);
