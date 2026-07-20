@@ -2511,6 +2511,44 @@ body::before {
   </div>
 </div>
 
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splash-screen" style="
+  position: fixed; inset: 0; z-index: 99999;
+  background: var(--bg-primary, #0f0f1a);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 24px;
+">
+  <svg viewBox="0 0 270 65" xmlns="http://www.w3.org/2000/svg" style="width:240px; height:58px; animation: splashFadeIn 0.5s ease forwards;">
+    <text x="135" y="58" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-weight="800" font-size="56" letter-spacing="-2">
+      <tspan fill="#ffffff">cashir</tspan><tspan fill="#3dbf8a">qu</tspan>
+    </text>
+  </svg>
+  <div style="display:flex; gap: 8px; align-items: center;">
+    <div class="splash-dot" style="animation-delay: 0s;"></div>
+    <div class="splash-dot" style="animation-delay: 0.15s;"></div>
+    <div class="splash-dot" style="animation-delay: 0.3s;"></div>
+  </div>
+  <p style="color: #9a9ab0; font-size: 0.85rem; margin-top: -8px; font-family: Inter, sans-serif;">Menghubungkan...</p>
+</div>
+<style>
+  @keyframes splashFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .splash-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #3dbf8a; animation: splashBounce 0.8s infinite ease-in-out;
+  }
+  @keyframes splashBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1.2); opacity: 1; }
+  }
+  #splash-screen.fade-out {
+    animation: splashOut 0.35s ease forwards;
+  }
+  @keyframes splashOut {
+    from { opacity: 1; }
+    to { opacity: 0; pointer-events: none; }
+  }
+</style>
+
 <!-- ===== WELCOME / LOGIN SCREEN ===== -->
 <div class="welcome-overlay" id="welcome-overlay">
 
@@ -5404,15 +5442,29 @@ function saveExpense() {
 
 // --- Initialize ---
 function init() {
-  // Tampilkan loading sementara menunggu auth
-  document.getElementById('welcome-overlay').classList.remove('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
+  // Sembunyikan login saat pertama load, tampilkan app-container tersembunyi
+  document.getElementById('welcome-overlay').classList.add('hidden');
   document.getElementById('app-container').classList.add('hidden');
+
+  // Helper: sembunyikan splash screen dengan animasi fade
+  function hideSplash() {
+    const splash = document.getElementById('splash-screen');
+    if (!splash) return;
+    splash.classList.add('fade-out');
+    setTimeout(() => { splash.style.display = 'none'; }, 380);
+  }
 
   // Auto Login Check
   const savedKaryawanCode = localStorage.getItem('kasir_karyawanCode');
+
+  // Beri timeout maksimal 5 detik jika Firebase tidak merespons
+  const authTimeout = setTimeout(() => {
+    hideSplash();
+    document.getElementById('welcome-overlay').classList.remove('hidden');
+  }, 5000);
   
   auth.onAuthStateChanged(async (user) => {
+    clearTimeout(authTimeout);
     if (user) {
       // Bos auto login
       try {
@@ -5427,17 +5479,26 @@ function init() {
           state.shopName     = data.shopName;
           state.employeeCode = data.employeeCode;
           state.shopLogo     = data.shopLogo || null;
-          // Cek subscription sebelum masuk app
+          // Cek subscription sebelum masuk app (enterApp dipanggil di dalam sini)
+          hideSplash();
           await checkAndShowSubscription();
         } else {
+          hideSplash();
           showNewShopForm(user.displayName);
         }
       } catch (err) {
         console.error("Auto login error:", err);
+        hideSplash();
+        document.getElementById('welcome-overlay').classList.remove('hidden');
       }
     } else if (savedKaryawanCode) {
       // Karyawan auto login
+      hideSplash();
       loginAsKaryawan(savedKaryawanCode);
+    } else {
+      // Tidak ada session — tampilkan login screen
+      hideSplash();
+      document.getElementById('welcome-overlay').classList.remove('hidden');
     }
   });
 
