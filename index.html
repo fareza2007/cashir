@@ -754,8 +754,60 @@ body::before {
 
 /* --- Cart --- */
 .cart-section {
-  position: sticky;
-  top: 20px;
+  display: none !important;
+}
+
+/* Inline Cart Controls */
+.btn-add-inline {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all var(--transition-base);
+}
+.btn-add-inline:hover {
+  background: rgba(61, 191, 138, 0.1);
+  border-color: var(--accent-primary);
+}
+
+.stepper-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 34px;
+}
+.stepper-btn {
+  background: rgba(61, 191, 138, 0.15);
+  border: none;
+  color: var(--accent-primary);
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 0 14px;
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stepper-btn:hover {
+  background: rgba(61, 191, 138, 0.3);
+}
+.stepper-qty {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
 }
 
 .cart-items {
@@ -2721,14 +2773,14 @@ body::before {
 </div>
 
 <!-- ===== FLOATING CHECKOUT ===== -->
-<div class="floating-checkout hidden" id="floating-checkout" onclick="startPaymentProcess()">
-  <div class="fc-info">
-    <div class="fc-qty" id="fc-qty">0 Item</div>
-    <div class="fc-total" id="fc-total">Rp 0</div>
+<div class="floating-checkout hidden" id="floating-checkout" style="padding: 12px 16px; border-radius: 12px 12px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); justify-content: space-between; align-items: center; border-top: 1px solid var(--border);">
+  <div class="fc-info" style="display: flex; flex-direction: column;">
+    <div class="fc-qty" id="fc-qty" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500; margin-bottom: 2px;">Subtotal</div>
+    <div class="fc-total" id="fc-total" style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">Rp 0</div>
   </div>
-  <div class="fc-action">
-    Bayar ➔
-  </div>
+  <button class="fc-action" onclick="startPaymentProcess()" style="background: var(--danger, #ef4444); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: 0.2s;">
+    Selanjutnya
+  </button>
 </div>
 
 <!-- ===== AUTHENTICATION OVERLAY ===== -->
@@ -3468,17 +3520,39 @@ function renderMenuGrid() {
     return;
   }
 
-  grid.innerHTML = filtered.map(item => `
-    <div class="menu-item" onclick="addToCart(${item.id})" id="menu-${item.id}">
-      <div class="item-img-wrap">
+  grid.innerHTML = filtered.map(item => {
+    const cartItem = state.cart.find(c => c.menuId === item.id);
+    let controlHtml = '';
+    
+    if (!cartItem) {
+      controlHtml = `<button class="btn-add-inline" onclick="addToCart(${item.id})"><span style="color:var(--accent-primary)">+</span> Tambah</button>`;
+    } else {
+      controlHtml = `
+        <div class="stepper-inline">
+          <button class="stepper-btn" onclick="updateQty(${item.id}, -1)">➖</button>
+          <span class="stepper-qty">${cartItem.qty}</span>
+          <button class="stepper-btn" onclick="updateQty(${item.id}, 1)">➕</button>
+        </div>
+      `;
+    }
+
+    return `
+    <div class="menu-item" id="menu-${item.id}">
+      <div class="item-img-wrap" onclick="if(!state.cart.find(c=>c.menuId===${item.id})) addToCart(${item.id})">
         ${item.image ? `<img src="${item.image}" class="item-img">` : `<div class="item-placeholder">${item.emoji || '🍽️'}</div>`}
       </div>
-      <div class="item-details">
-        <div class="item-name">${item.name}</div>
-        <div class="item-price">${formatRupiah(item.price)}</div>
+      <div class="item-details" style="display:flex; flex-direction:column; justify-content:space-between; flex:1;">
+        <div>
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">${formatRupiah(item.price)}</div>
+        </div>
+        <div class="item-controls" id="controls-${item.id}">
+          ${controlHtml}
+        </div>
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderCategories() {
@@ -3522,6 +3596,21 @@ function addToCart(menuId) {
   }
 
   renderCart();
+  
+  // Re-render the controls for this specific item
+  const controlsEl = document.getElementById(`controls-${menuId}`);
+  if (controlsEl) {
+    const cartItem = state.cart.find(c => c.menuId === menuId);
+    if (cartItem) {
+      controlsEl.innerHTML = `
+        <div class="stepper-inline">
+          <button class="stepper-btn" onclick="updateQty(${menuId}, -1)">➖</button>
+          <span class="stepper-qty">${cartItem.qty}</span>
+          <button class="stepper-btn" onclick="updateQty(${menuId}, 1)">➕</button>
+        </div>
+      `;
+    }
+  }
 }
 
 function updateQty(menuId, delta) {
@@ -3532,7 +3621,24 @@ function updateQty(menuId, delta) {
   if (item.qty <= 0) {
     state.cart = state.cart.filter(c => c.menuId !== menuId);
   }
+  
+  // Update only the specific control and floating cart to avoid re-rendering entire grid
   renderCart();
+  const controlsEl = document.getElementById(`controls-${menuId}`);
+  if (controlsEl) {
+    const cartItem = state.cart.find(c => c.menuId === menuId);
+    if (!cartItem) {
+      controlsEl.innerHTML = `<button class="btn-add-inline" onclick="addToCart(${menuId})"><span style="color:var(--accent-primary)">+</span> Tambah</button>`;
+    } else {
+      controlsEl.innerHTML = `
+        <div class="stepper-inline">
+          <button class="stepper-btn" onclick="updateQty(${menuId}, -1)">➖</button>
+          <span class="stepper-qty">${cartItem.qty}</span>
+          <button class="stepper-btn" onclick="updateQty(${menuId}, 1)">➕</button>
+        </div>
+      `;
+    }
+  }
 }
 
 function removeFromCart(menuId) {
