@@ -2829,8 +2829,10 @@ body::before {
     <div class="section-card">
       <div class="section-header">
         <h2 class="section-title"><span class="icon">📋</span> Riwayat Transaksi</h2>
-        <div class="riwayat-controls">
+        <div class="riwayat-controls" style="display:flex; gap:8px; align-items:center;">
           <input type="date" class="date-input" id="history-date">
+          <button class="btn btn-primary" onclick="showClosingModal()" style="padding: 8px; font-size: 0.9rem;">💼 Rekap Shift</button>
+          <button class="btn btn-secondary" onclick="exportToExcel()" id="btn-export-excel" style="padding: 8px; font-size: 0.9rem;">⬇️ Excel</button>
         </div>
       </div>
       <div class="daily-summary" id="history-summary"></div>
@@ -3583,14 +3585,12 @@ function copyEmployeeToken() {
 
 function applyRoleRestrictions() {
   if (state.role === 'Karyawan') {
-    document.querySelector('.nav-tab[data-page="keuangan"]').style.display = 'none';
-    document.querySelector('.nav-tab[data-page="riwayat"]').style.display  = 'none';
-    document.querySelector('.nav-tab[data-page="menu"]').style.display     = 'none';
-    if (state.activePage !== 'kasir') switchPage('kasir');
+    document.querySelectorAll('.nav-tab[data-page="keuangan"], .mbn-tab[data-page="keuangan"]').forEach(e => e.style.display = 'none');
+    document.querySelectorAll('.nav-tab[data-page="menu"], .mbn-tab[data-page="menu"]').forEach(e => e.style.display = 'none');
+    if (state.activePage === 'keuangan' || state.activePage === 'menu') switchPage('kasir');
   } else {
-    document.querySelector('.nav-tab[data-page="keuangan"]').style.display = 'flex';
-    document.querySelector('.nav-tab[data-page="riwayat"]').style.display  = 'flex';
-    document.querySelector('.nav-tab[data-page="menu"]').style.display     = 'flex';
+    document.querySelectorAll('.nav-tab[data-page="keuangan"], .mbn-tab[data-page="keuangan"]').forEach(e => e.style.display = 'flex');
+    document.querySelectorAll('.nav-tab[data-page="menu"], .mbn-tab[data-page="menu"]').forEach(e => e.style.display = 'flex');
   }
 }
 
@@ -3603,8 +3603,8 @@ function logout() {
 
 // --- Navigation ---
 function switchPage(page) {
-  if (state.role === 'Karyawan' && (page === 'keuangan' || page === 'riwayat')) {
-    alert('Akses Ditolak! Bagian Keuangan dan Riwayat Transaksi hanya dapat diakses oleh Bos.');
+  if (state.role === 'Karyawan' && (page === 'keuangan' || page === 'menu')) {
+    alert('Akses Ditolak! Bagian ini hanya dapat diakses oleh Bos.');
     return;
   }
   state.activePage = page;
@@ -5554,6 +5554,59 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// --- Closing Kasir ---
+function showClosingModal() {
+  const dateInput = document.getElementById('history-date');
+  const selectedDate = dateInput ? (dateInput.value || getTodayStr()) : getTodayStr();
+
+  const filteredTxn = state.transactions.filter(t => t.date.split('T')[0] === selectedDate);
+  const filteredExp = (state.expenses || []).filter(e => e.date === selectedDate);
+
+  const totalPemasukan = filteredTxn.reduce((s, t) => s + t.total, 0);
+  const tunaiTxns = filteredTxn.filter(t => t.paymentMethod === 'Tunai' || !t.paymentMethod);
+  const totalTunai = tunaiTxns.reduce((s, t) => s + t.total, 0);
+  
+  const nonTunaiTxns = filteredTxn.filter(t => t.paymentMethod !== 'Tunai' && t.paymentMethod);
+  const totalNonTunai = nonTunaiTxns.reduce((s, t) => s + t.total, 0);
+
+  const totalPengeluaran = filteredExp.reduce((s, e) => s + e.amount, 0);
+  
+  const uangDiLaci = totalTunai - totalPengeluaran;
+
+  const modal = document.getElementById('modal-overlay');
+  document.getElementById('modal-title').textContent = '💼 Rekap Shift (Closing)';
+  document.getElementById('modal-body').innerHTML = `
+    <div style="background:var(--bg-secondary); padding:16px; border-radius:12px; margin-bottom:16px;">
+      <h3 style="margin-bottom:12px; font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:8px;">Pemasukan</h3>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; color:var(--text-secondary);">
+        <span>💳 Non-Tunai</span>
+        <span>${formatRupiah(totalNonTunai)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span>💵 Tunai</span>
+        <span style="font-weight:600;">${formatRupiah(totalTunai)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; color:var(--danger);">
+        <span>➖ Pengeluaran (Kasbon dll)</span>
+        <span>${formatRupiah(totalPengeluaran)}</span>
+      </div>
+    </div>
+    
+    <div style="background:var(--accent-primary); color:white; padding:16px; border-radius:12px; text-align:center;">
+      <div style="font-size:0.9rem; opacity:0.9; margin-bottom:4px;">Uang Fisik yang harus ada di laci/kasir:</div>
+      <div style="font-size:1.6rem; font-weight:800;">${formatRupiah(uangDiLaci)}</div>
+      <div style="font-size:0.75rem; opacity:0.8; margin-top:4px;">(Pemasukan Tunai - Pengeluaran)</div>
+    </div>
+    <div style="margin-top:16px; font-size:0.85rem; color:var(--text-muted); text-align:center;">
+      Gunakan data ini untuk mencocokkan uang di laci dengan sistem sebelum tutup toko.
+    </div>
+  `;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="closeModal()" style="width:100%;">Tutup & Selesai</button>
+  `;
+  modal.classList.remove('hidden');
+}
 
 </script>
 
