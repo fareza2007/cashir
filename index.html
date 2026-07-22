@@ -3586,11 +3586,9 @@ function copyEmployeeToken() {
 function applyRoleRestrictions() {
   if (state.role === 'Karyawan') {
     document.querySelectorAll('.nav-tab[data-page="keuangan"], .mbn-tab[data-page="keuangan"]').forEach(e => e.style.display = 'none');
-    document.querySelectorAll('.nav-tab[data-page="menu"], .mbn-tab[data-page="menu"]').forEach(e => e.style.display = 'none');
-    if (state.activePage === 'keuangan' || state.activePage === 'menu') switchPage('kasir');
+    if (state.activePage === 'keuangan') switchPage('kasir');
   } else {
     document.querySelectorAll('.nav-tab[data-page="keuangan"], .mbn-tab[data-page="keuangan"]').forEach(e => e.style.display = 'flex');
-    document.querySelectorAll('.nav-tab[data-page="menu"], .mbn-tab[data-page="menu"]').forEach(e => e.style.display = 'flex');
   }
 }
 
@@ -3603,8 +3601,8 @@ function logout() {
 
 // --- Navigation ---
 function switchPage(page) {
-  if (state.role === 'Karyawan' && (page === 'keuangan' || page === 'menu')) {
-    alert('Akses Ditolak! Bagian ini hanya dapat diakses oleh Bos.');
+  if (state.role === 'Karyawan' && page === 'keuangan') {
+    alert('Akses Ditolak! Bagian Keuangan hanya dapat diakses oleh Bos.');
     return;
   }
   state.activePage = page;
