@@ -3731,6 +3731,7 @@ function addToCart(menuId) {
   const controlsEl = document.getElementById(`controls-${menuId}`);
   if (controlsEl) {
     const cartItem = state.cart.find(c => c.menuId === menuId);
+    if (cartItem) {
       controlsEl.innerHTML = `
         <div class="stepper-inline">
           <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${menuId}, -1)">➖</button>
