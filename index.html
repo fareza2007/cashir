@@ -4845,100 +4845,79 @@ function deleteMenu(menuId) {
 
 // --- Export to Excel ---
 function exportToExcel() {
-  if (state.transactions.length === 0) {
-    alert('Belum ada transaksi untuk di-export!');
+  const today = getTodayStr();
+
+  // Filter hanya transaksi hari ini
+  const todayTxns = state.transactions.filter(t => t.date.split('T')[0] === today);
+  // Filter hanya pengeluaran hari ini
+  const todayExps = (state.expenses || []).filter(e => e.date === today);
+
+  if (todayTxns.length === 0 && todayExps.length === 0) {
+    alert('Belum ada transaksi atau pengeluaran hari ini untuk di-export!');
     return;
   }
 
-  // Build flat data
-  const rows = [];
-  state.transactions.forEach(txn => {
-    txn.items.forEach(item => {
-      rows.push({
-        'No Transaksi': txn.id,
-        'Tanggal': formatDate(txn.date),
-        'Waktu': formatTime(txn.date),
-        'Metode Bayar': txn.paymentMethod || 'Tunai',
-        'Jenis Pesanan': txn.orderType || '-',
-        'Menu': item.name,
-        'Harga': item.price,
-        'Jumlah': item.qty,
-        'Subtotal': item.subtotal,
-        'Total Transaksi': txn.total,
-      });
-    });
-  });
-
-  // Summary sheet
-  const summary = [];
-  const dateMap = {};
-  state.transactions.forEach(t => {
-    const d = t.date.split('T')[0];
-    if (!dateMap[d]) dateMap[d] = { income: 0, count: 0, expense: 0 };
-    dateMap[d].income += t.total;
-    dateMap[d].count  += 1;
-  });
-  // Tambahkan pengeluaran ke dateMap
-  (state.expenses || []).forEach(e => {
-    const d = e.date;
-    if (!dateMap[d]) dateMap[d] = { income: 0, count: 0, expense: 0 };
-    dateMap[d].expense += e.amount;
-  });
-
-  Object.entries(dateMap).sort().forEach(([date, d]) => {
-    summary.push({
-      'Tanggal':           formatDate(date),
-      'Jumlah Transaksi':  d.count,
-      'Total Pemasukan':   d.income,
-      'Total Pengeluaran': d.expense,
-      'Laba Bersih':       d.income - d.expense,
-    });
-  });
-
-  const totalAll    = state.transactions.reduce((s, t) => s + t.total, 0);
-  const totalExpAll = (state.expenses || []).reduce((s, e) => s + e.amount, 0);
-  summary.push({
-    'Tanggal':           'TOTAL',
-    'Jumlah Transaksi':  state.transactions.length,
-    'Total Pemasukan':   totalAll,
-    'Total Pengeluaran': totalExpAll,
-    'Laba Bersih':       totalAll - totalExpAll,
-  });
-
-  // Create workbook
   const wb = XLSX.utils.book_new();
 
-  const ws1 = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws1, 'Detail Transaksi');
+  // ===== Sheet 1: Detail Transaksi (hari ini) =====
+  if (todayTxns.length > 0) {
+    const rows = [];
+    todayTxns.forEach(txn => {
+      txn.items.forEach(item => {
+        rows.push({
+          'No Transaksi':   txn.id,
+          'Waktu':          formatTime(txn.date),
+          'Metode Bayar':   txn.paymentMethod || 'Tunai',
+          'Jenis Pesanan':  txn.orderType || '-',
+          'Menu':           item.name,
+          'Harga':          item.price,
+          'Jumlah':         item.qty,
+          'Subtotal':       item.subtotal,
+          'Total Transaksi':txn.total,
+        });
+      });
+    });
 
-  const ws2 = XLSX.utils.json_to_sheet(summary);
-  XLSX.utils.book_append_sheet(wb, ws2, 'Ringkasan Harian');
-
-  // Set column widths
-  ws1['!cols'] = [
-    { wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
-    { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 14 },
-  ];
-  ws2['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 16 }];
-
-  // Sheet 3 — Pengeluaran
-  const expRows = (state.expenses || []).map(e => ({
-    'Tanggal':      formatDate(e.date),
-    'Jam':          formatTime(e.timestamp),
-    'Keterangan':   e.desc,
-    'Jumlah':       e.amount,
-  }));
-  if (expRows.length > 0) {
-    const ws3 = XLSX.utils.json_to_sheet(expRows);
-    ws3['!cols'] = [{ wch: 14 }, { wch: 8 }, { wch: 30 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, ws3, 'Pengeluaran');
+    const ws1 = XLSX.utils.json_to_sheet(rows);
+    ws1['!cols'] = [
+      { wch: 12 }, { wch: 8 }, { wch: 15 }, { wch: 15 },
+      { wch: 20 }, { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 14 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Detail Transaksi');
   }
 
-  const fileName = `Laporan_Warung_${getTodayStr()}.xlsx`;
+  // ===== Sheet 2: Pengeluaran (hari ini) =====
+  if (todayExps.length > 0) {
+    const expRows = todayExps.map(e => ({
+      'Waktu':        formatTime(e.timestamp),
+      'Keterangan':   e.desc,
+      'Jumlah':       e.amount,
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(expRows);
+    ws2['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Pengeluaran');
+  }
+
+  // ===== Sheet 3: Ringkasan Hari Ini =====
+  const totalPemasukan  = todayTxns.reduce((s, t) => s + t.total, 0);
+  const totalPengeluaran = todayExps.reduce((s, e) => s + e.amount, 0);
+  const summaryRows = [
+    { 'Keterangan': 'Tanggal',           'Nilai': formatDate(today) },
+    { 'Keterangan': 'Jumlah Transaksi',  'Nilai': todayTxns.length },
+    { 'Keterangan': 'Total Pemasukan',   'Nilai': totalPemasukan },
+    { 'Keterangan': 'Total Pengeluaran', 'Nilai': totalPengeluaran },
+    { 'Keterangan': 'Laba Bersih',       'Nilai': totalPemasukan - totalPengeluaran },
+  ];
+  const ws3 = XLSX.utils.json_to_sheet(summaryRows);
+  ws3['!cols'] = [{ wch: 20 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Ringkasan');
+
+  const fileName = `Laporan_${today}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
 // --- Setup & Role Management Functions ---
+
 let selectedRole = 'Bos';
 
 function selectSetupRole(role) {
