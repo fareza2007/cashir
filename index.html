@@ -3182,7 +3182,7 @@ function hidePricingScreen() {
 // Cek subscription dari Firestore berdasarkan UID
 async function checkAndShowSubscription() {
   // === ADMIN BYPASS ===
-  const adminEmails = ['hakaikfareza@gmail.com', 'jagijaga367@gmail.com'];
+  const adminEmails = ['hakaikfareza@gmail.com', 'jagijaga367@gmail.com', 'rstccoffee@gmail.com'];
   if (adminEmails.includes(state.userEmail)) {
     enterApp();
     return;
@@ -3655,20 +3655,20 @@ function renderMenuGrid() {
     let controlHtml = '';
     
     if (!cartItem) {
-      controlHtml = `<button class="btn-add-inline" onclick="addToCart(${item.id})"><span style="color:var(--accent-primary)">+</span> Tambah</button>`;
+      controlHtml = `<button class="btn-add-inline" onclick="event.stopPropagation(); addToCart(${item.id})"><span style="color:var(--accent-primary)">+</span> Tambah</button>`;
     } else {
       controlHtml = `
         <div class="stepper-inline">
-          <button class="stepper-btn" onclick="updateQty(${item.id}, -1)">➖</button>
+          <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${item.id}, -1)">➖</button>
           <span class="stepper-qty">${cartItem.qty}</span>
-          <button class="stepper-btn" onclick="updateQty(${item.id}, 1)">➕</button>
+          <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${item.id}, 1)">➕</button>
         </div>
       `;
     }
 
     return `
-    <div class="menu-item" id="menu-${item.id}">
-      <div class="item-img-wrap" onclick="if(!state.cart.find(c=>c.menuId===${item.id})) addToCart(${item.id})">
+    <div class="menu-item" id="menu-${item.id}" onclick="addToCart(${item.id})" style="cursor:pointer;">
+      <div class="item-img-wrap">
         ${item.image ? `<img src="${item.image}" class="item-img">` : `<div class="item-placeholder">${item.emoji || '🍽️'}</div>`}
       </div>
       <div class="item-details" style="display:flex; flex-direction:column; justify-content:space-between; flex:1;">
@@ -3731,12 +3731,11 @@ function addToCart(menuId) {
   const controlsEl = document.getElementById(`controls-${menuId}`);
   if (controlsEl) {
     const cartItem = state.cart.find(c => c.menuId === menuId);
-    if (cartItem) {
       controlsEl.innerHTML = `
         <div class="stepper-inline">
-          <button class="stepper-btn" onclick="updateQty(${menuId}, -1)">➖</button>
+          <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${menuId}, -1)">➖</button>
           <span class="stepper-qty">${cartItem.qty}</span>
-          <button class="stepper-btn" onclick="updateQty(${menuId}, 1)">➕</button>
+          <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${menuId}, 1)">➕</button>
         </div>
       `;
     }
@@ -3758,13 +3757,13 @@ function updateQty(menuId, delta) {
   if (controlsEl) {
     const cartItem = state.cart.find(c => c.menuId === menuId);
     if (!cartItem) {
-      controlsEl.innerHTML = `<button class="btn-add-inline" onclick="addToCart(${menuId})"><span style="color:var(--accent-primary)">+</span> Tambah</button>`;
+      controlsEl.innerHTML = `<button class="btn-add-inline" onclick="event.stopPropagation(); addToCart(${menuId})"><span style="color:var(--accent-primary)">+</span> Tambah</button>`;
     } else {
       controlsEl.innerHTML = `
         <div class="stepper-inline">
-          <button class="stepper-btn" onclick="updateQty(${menuId}, -1)">➖</button>
+          <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${menuId}, -1)">➖</button>
           <span class="stepper-qty">${cartItem.qty}</span>
-          <button class="stepper-btn" onclick="updateQty(${menuId}, 1)">➕</button>
+          <button class="stepper-btn" onclick="event.stopPropagation(); updateQty(${menuId}, 1)">➕</button>
         </div>
       `;
     }
