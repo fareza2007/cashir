@@ -3583,14 +3583,7 @@ function copyEmployeeToken() {
     .catch(() => alert('Kode karyawan Anda: ' + state.employeeCode));
 }
 
-function applyRoleRestrictions() {
-  if (state.role === 'Karyawan') {
-    document.querySelectorAll('.nav-tab[data-page="keuangan"], .mbn-tab[data-page="keuangan"]').forEach(e => e.style.display = 'none');
-    if (state.activePage === 'keuangan') switchPage('kasir');
-  } else {
-    document.querySelectorAll('.nav-tab[data-page="keuangan"], .mbn-tab[data-page="keuangan"]').forEach(e => e.style.display = 'flex');
-  }
-}
+// (applyRoleRestrictions moved to bottom)
 
 function logout() {
   if (!confirm('Yakin ingin keluar?')) return;
@@ -5046,7 +5039,8 @@ function resetSetup() {
 
 function applyRoleRestrictions() {
   const navKeuangan = document.getElementById('nav-keuangan');
-  const navRiwayat = document.getElementById('nav-riwayat');
+  const mbnKeuangan = document.getElementById('mbn-keuangan');
+  
   const editShopBtn = document.getElementById('edit-shop-name-btn');
   const userBadge = document.getElementById('header-user-badge');
   const roleText = document.getElementById('role-badge-text');
@@ -5054,7 +5048,7 @@ function applyRoleRestrictions() {
   
   if (state.role === 'Bos') {
     if (navKeuangan) navKeuangan.style.display = 'flex';
-    if (navRiwayat) navRiwayat.style.display = 'flex';
+    if (mbnKeuangan) mbnKeuangan.style.display = 'flex';
     if (editShopBtn) editShopBtn.style.display = 'inline-flex';
     
     if (userBadge) userBadge.style.display = 'flex';
@@ -5065,10 +5059,10 @@ function applyRoleRestrictions() {
     }
   } else {
     if (navKeuangan) navKeuangan.style.display = 'none';
-    if (navRiwayat) navRiwayat.style.display = 'none';
+    if (mbnKeuangan) mbnKeuangan.style.display = 'none';
     if (editShopBtn) editShopBtn.style.display = 'none';
     
-    if (state.activePage === 'keuangan' || state.activePage === 'riwayat') {
+    if (state.activePage === 'keuangan') {
       switchPage('kasir');
     }
     
