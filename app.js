@@ -317,12 +317,12 @@ async function pricingLogout() {
 // === AUTH: LOGIN BOS DENGAN GOOGLE ===
 async function loginWithGoogle() {
   const btn = document.getElementById('btn-google-login');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menghubungkan...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Menghubungkan...'; }
   
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    const result   = await auth.signInWithPopup(provider);
-    const user     = result.user;
+    const result = await auth.signInWithPopup(provider);
+    const user   = result.user;
     
     // Cek apakah warung sudah ada di Firestore
     const shopDoc = await db.collection('shops').doc(user.uid).get();
@@ -348,6 +348,15 @@ async function loginWithGoogle() {
         state.employeeCode = data.employeeCode;
         state.shopLogo     = data.shopLogo || null;
       }
+      
+      if (!data.bosCode) {
+        const newBosCode = generateBosCode();
+        state.bosCode = newBosCode;
+        db.collection('shops').doc(user.uid).update({ bosCode: newBosCode });
+      } else {
+        state.bosCode = data.bosCode;
+      }
+
       // Cek subscription sebelum masuk app
       await checkAndShowSubscription();
     } else {
@@ -458,17 +467,20 @@ async function createNewShop() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan...'; }
   
   const employeeCode = generateEmployeeCode();
+  const bosCode      = generateBosCode();
   
   state.role         = 'Bos';
   state.token        = state.uid;
   state.shopName     = shopName;
   state.employeeCode = employeeCode;
+  state.bosCode      = bosCode;
   
   // Simpan ke Firestore (termasuk logo jika ada)
   await db.collection('shops').doc(state.uid).set({
     shopName:      shopName,
     shopLogo:      state.shopLogo || null,
     employeeCode:  employeeCode,
+    bosCode:       bosCode,
     ownerEmail:    state.userEmail,
     menu:          [],
     transactions:  [],
@@ -483,6 +495,44 @@ async function createNewShop() {
   sendEmployeeCodeEmail(state.userEmail, shopName, employeeCode);
   
   enterApp();
+}
+
+function generateBosCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function loginAsBosWithCode() {
+  const code = document.getElementById('bos-code-input').value.trim();
+  if (!code) { alert('Masukkan Kode Akses Bos!'); return; }
+  
+  const btn = document.getElementById('btn-bos-code-login');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  
+  try {
+    const snapshot = await db.collection('shops').where('bosCode', '==', code).limit(1).get();
+    if (!snapshot.empty) {
+      const shopDoc = snapshot.docs[0];
+      const data    = shopDoc.data();
+      
+      state.uid          = shopDoc.id;
+      state.role         = 'Bos';
+      state.token        = shopDoc.id;
+      state.shopName     = data.shopName;
+      state.employeeCode = data.employeeCode;
+      state.bosCode      = data.bosCode;
+      
+      localStorage.setItem('kasir_bosCode', code);
+      hidePricingScreen();
+      enterApp();
+    } else {
+      alert('Kode Bos tidak valid!');
+      if (btn) { btn.disabled = false; btn.textContent = 'Masuk'; }
+    }
+  } catch (err) {
+    console.error('Bos code login error:', err);
+    alert('Gagal login: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Masuk'; }
+  }
 }
 
 // === AUTH: LOGIN KARYAWAN DENGAN KODE ===
@@ -563,9 +613,11 @@ function copyEmployeeToken() {
 
 function logout() {
   if (!confirm('Yakin ingin keluar?')) return;
-  if (auth && auth.currentUser) auth.signOut();
-  localStorage.clear();
-  window.location.reload();
+  auth.signOut().then(() => {
+    localStorage.removeItem('kasir_karyawanCode');
+    localStorage.removeItem('kasir_bosCode');
+    location.reload();
+  });
 }
 
 // --- Navigation ---
@@ -2031,7 +2083,7 @@ function applyRoleRestrictions() {
     if (roleText) roleText.textContent = '💼 Bos';
     if (tokenText) {
       tokenText.style.display = 'inline-block';
-      tokenText.textContent = `Kode Karyawan: ${state.employeeCode || '-'} 📋`;
+      tokenText.textContent = `Kode Kasir: ${state.employeeCode || '-'} | Kode Bos: ${state.bosCode || '-'} 🔑`;
     }
   } else {
     if (navKeuangan) navKeuangan.style.display = 'none';
@@ -2494,11 +2546,9 @@ function saveExpense() {
 
 // --- Initialize ---
 function init() {
-  // Sembunyikan login saat pertama load, tampilkan app-container tersembunyi
   document.getElementById('welcome-overlay').classList.add('hidden');
   document.getElementById('app-container').classList.add('hidden');
 
-  // Helper: sembunyikan splash screen dengan animasi fade
   function hideSplash() {
     const splash = document.getElementById('splash-screen');
     if (!splash) return;
@@ -2506,19 +2556,27 @@ function init() {
     setTimeout(() => { splash.style.display = 'none'; }, 380);
   }
 
-  // Auto Login Check
   const savedKaryawanCode = localStorage.getItem('kasir_karyawanCode');
-
-  // Beri timeout maksimal 5 detik jika Firebase tidak merespons
-  const authTimeout = setTimeout(() => {
-    hideSplash();
-    document.getElementById('welcome-overlay').classList.remove('hidden');
-  }, 5000);
+  const savedBosCode = localStorage.getItem('kasir_bosCode');
   
+  // === Deteksi APK vs Web ===
+  const isAPK = !!window.Capacitor;
+  const webLogin = document.getElementById('bos-web-login');
+  const apkLogin = document.getElementById('bos-apk-login');
+  const bosDesc  = document.getElementById('bos-card-desc');
+  if (isAPK) {
+    if (webLogin) webLogin.style.display = 'none';
+    if (apkLogin) apkLogin.style.display = 'block';
+    if (bosDesc)  bosDesc.textContent = 'Masuk dengan Kode Bos dari website';
+  } else {
+    if (webLogin) webLogin.style.display = 'block';
+    if (apkLogin) apkLogin.style.display = 'none';
+  }
+
+  // Cek auto login
   auth.onAuthStateChanged(async (user) => {
-    clearTimeout(authTimeout);
-    if (user) {
-      // Bos auto login
+    if (user && !isAPK) {
+      // Auto login di Web via Google
       try {
         const shopDoc = await db.collection('shops').doc(user.uid).get();
         if (shopDoc.exists) {
@@ -2529,9 +2587,9 @@ function init() {
           state.role         = 'Bos';
           state.token        = user.uid;
           state.shopName     = data.shopName;
-          state.employeeCode = data.employeeCode;
+          state.employeeCode = data.employeeCode || '';
           state.shopLogo     = data.shopLogo || null;
-          // Cek subscription sebelum masuk app (enterApp dipanggil di dalam sini)
+          state.bosCode      = data.bosCode || '';
           hideSplash();
           await checkAndShowSubscription();
         } else {
@@ -2539,47 +2597,48 @@ function init() {
           showNewShopForm(user.displayName);
         }
       } catch (err) {
-        console.error("Auto login error:", err);
+        console.error('Auto login error:', err);
         hideSplash();
         document.getElementById('welcome-overlay').classList.remove('hidden');
       }
+    } else if (savedBosCode) {
+      document.getElementById('bos-code-input').value = savedBosCode;
+      loginAsBosWithCode();
     } else if (savedKaryawanCode) {
-      // Karyawan auto login
-      hideSplash();
       loginAsKaryawan(savedKaryawanCode);
     } else {
-      // Tidak ada session — tampilkan login screen
       hideSplash();
       document.getElementById('welcome-overlay').classList.remove('hidden');
     }
   });
 
+  if (window.capacitor) {
+    const webLogin = document.getElementById('bos-web-login');
+    const apkLogin = document.getElementById('bos-apk-login');
+    if (webLogin) webLogin.style.display = 'none';
+    if (apkLogin) apkLogin.style.display = 'block';
+  }
+
   updateDateDisplay();
 
-  // Set history date to today
   const dateInput = document.getElementById('history-date');
   if (dateInput) dateInput.value = getTodayStr();
 
-  // Event listeners
   document.getElementById('history-date')?.addEventListener('change', renderHistory);
   document.getElementById('menu-search')?.addEventListener('input', renderMenuManage);
 
-  // Close modal on overlay click
   document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'modal-overlay') closeModal();
   });
 
-  // Close success overlay on click
   document.getElementById('success-overlay')?.addEventListener('click', () => {
     document.getElementById('success-overlay').classList.add('hidden');
   });
 
-  // Keyboard shortcut: Escape to close modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
   });
   
-  // Allow Enter key in karyawan code input
   document.getElementById('karyawan-code-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') loginAsKaryawan();
   });
