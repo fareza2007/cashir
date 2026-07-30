@@ -2530,9 +2530,24 @@ function init() {
   }
 
   const savedKaryawanCode = localStorage.getItem('kasir_karyawanCode');
-  
+
+  // === TIMEOUT FALLBACK ===
+  // Jika Firebase tidak merespons dalam 8 detik (HP lambat/offline),
+  // paksa tampilkan halaman login daripada stuck selamanya.
+  let authResolved = false;
+  const splashTimeout = setTimeout(() => {
+    if (!authResolved) {
+      console.warn('[Init] Firebase auth timeout — menampilkan halaman login.');
+      hideSplash();
+      document.getElementById('welcome-overlay').classList.remove('hidden');
+    }
+  }, 8000);
+
   // Cek auto login
   auth.onAuthStateChanged(async (user) => {
+    authResolved = true;
+    clearTimeout(splashTimeout); // Batalkan timeout karena sudah merespons
+
     if (user) {
       // Auto login via Google
       try {
