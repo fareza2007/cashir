@@ -223,6 +223,11 @@ async function startFreeTrial() {
   }
 }
 
+// URL dasar untuk API — deteksi otomatis antara website dan APK
+const API_BASE_URL = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  ? 'https://cashir-pied.vercel.app'
+  : '';
+
 // Buat transaksi Midtrans
 async function createMidtransPayment(plan) {
   if (!state.uid || !state.userEmail) return;
@@ -234,7 +239,7 @@ async function createMidtransPayment(plan) {
   const orderId = `cashirqu-${plan}-${state.uid.slice(0,8)}-${Date.now()}`;
 
   try {
-    const resp = await fetch('/api/create-payment', {
+    const resp = await fetch(`${API_BASE_URL}/api/create-payment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: state.userEmail, plan, orderId, uid: state.uid }),
@@ -272,7 +277,7 @@ async function createMidtransPayment(plan) {
 async function activateSubscription(plan, orderId) {
   // Verifikasi dulu ke server
   try {
-    const vResp = await fetch(`/api/verify-payment?orderId=${encodeURIComponent(orderId)}`);
+    const vResp = await fetch(`${API_BASE_URL}/api/verify-payment?orderId=${encodeURIComponent(orderId)}`);
     const vData = await vResp.json();
     if (!vData.isPaid) {
       document.getElementById('pricing-status-msg').textContent = '⚠️ Pembayaran belum terkonfirmasi. Tunggu sebentar.';
