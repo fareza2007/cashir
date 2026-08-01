@@ -625,9 +625,16 @@ function switchPage(page) {
 // --- Menu Rendering ---
 function renderMenuGrid() {
   const grid = document.getElementById('menu-grid');
-  const filtered = state.activeCategory === 'Semua'
+  const searchInput = document.getElementById('menu-search-input');
+  const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+
+  let filtered = state.activeCategory === 'Semua'
     ? state.menu
     : state.menu.filter(m => m.category === state.activeCategory);
+    
+  if (searchQuery) {
+    filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery));
+  }
 
   if (state.menu.length === 0) {
     grid.innerHTML = `

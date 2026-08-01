@@ -325,6 +325,9 @@
           <h2 class="section-title"><span class="icon">🍽️</span> Daftar Menu</h2>
           <button class="btn btn-secondary" onclick="showExpenseModal()" style="padding: 8px 12px; font-size: 0.85rem; border-color: var(--accent-primary); color: var(--accent-primary);">💸 Catat Pengeluaran</button>
         </div>
+        <div class="search-bar-container" style="margin-bottom: 12px;">
+          <input type="text" id="menu-search-input" class="form-input" placeholder="🔍 Cari nama menu..." oninput="renderMenuGrid()" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+        </div>
         <div class="category-filters" id="category-filters"></div>
         <div class="menu-grid" id="menu-grid"></div>
       </div>
